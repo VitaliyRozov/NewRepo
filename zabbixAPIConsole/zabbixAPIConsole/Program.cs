@@ -14,40 +14,102 @@ namespace zabbixAPIConsole
 
         static void Main(string[] args)
         {
-            if (args.Length == 0) {
+
+            // Работа с параметрами командной строки
+
+            if (args.Length == 0 || args[0] == "-help") {
                 Console.Write("Не заданы параметры:\n" +
                     "-perod \"month или week\"\n" +
                     "-path \"путь до файла\"\n" +
-                    "-groupids \"ID группа хостов скоторых необходимы данные\"\n" +
+                    "-groupids \"ID группы хостов скоторых необходимы данные\"\n" +
                     "-templateid \"ID триггера по которому необходимы данные\"\n");
                 Console.ReadKey();
                 return;
             }
 
-            string period = "";
+            DateTime period = DateTime.Today;
+            string path = "";
+            int groupids = -1;
+            int templateid = -1;
 
             for (int q = 0; q < args.Length; q++)
             {
                 switch (args[q])
                 {
                     case "-perod":
-                        if (args[q + 1] == "month") period = "month";
-                        if (args[q + 1] == "week") period = "week";
-                        if (period == "")
+                        switch (args[q + 1])
                         {
-                            Console.Write("Параметр -period не задан");
-                            return;
+                            case "month":
+                                period = DateTime.Today.AddMonths(-1);
+                                break;
+                            case "week":
+                                period = DateTime.Today.AddDays(-7);
+                                break;
+                            default:
+                                Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                                Console.ReadKey();
+                                return;
                         }
+                        q += 1;
                         break;
                     case "-path":
-                        if (args[q + 1] == "month") period = "month";
-                        if (args[q + 1] == "week") period = "week";
-                        if (period == "")
+                        if ((args[q + 1] == null) || (args[q + 1].IndexOfAny(System.IO.Path.GetInvalidPathChars()) != -1))
                         {
-                            Console.Write("Параметр -period не задан");
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
+                        try
+                        {
+                            var tempFileInfo = new System.IO.FileInfo(args[q + 1]);
+                            if(tempFileInfo.Attributes.ToString() == "Directory")
+                                path = path = args[q + 1]+ "\\event.csv";
+                            else
+                                path = args[q + 1];
+                        }
+                        catch (NotSupportedException)
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
+                        q += 1;
+                        break;
+                    case "-groupids":
+                        try
+                        {
+                            groupids = Convert.ToInt32(args[q + 1]);
+                            q += 1;
+                        }
+                        catch
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
                             return;
                         }
                         break;
+                    case "-templateid":
+                        try
+                        {
+                            templateid = Convert.ToInt32(args[q + 1]);
+                            q += 1;
+                        }
+                        catch
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
+                        break;
+                    default:
+                        Console.Write("Неизвестный параметр: " + args[q]);
+                        Console.ReadKey();
+                        return;
                 }
             }
             
@@ -88,7 +150,7 @@ namespace zabbixAPIConsole
                 auth = AResult.result,
                 @params = new Host.RequestParams
                 {
-                    groupids = "8",
+                    groupids = groupids,
                 }
             };
 
@@ -99,7 +161,19 @@ namespace zabbixAPIConsole
             //Десериализация результата в объект
             Host.Result HResult = JsonConvert.DeserializeObject<Host.Result>(result);
 
-            System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Temp\event.csv");
+            System.IO.StreamWriter file = null;
+            try
+            {
+                file = new System.IO.StreamWriter(path);
+            }
+            catch (System.IO.IOException e)
+            {
+                Console.WriteLine(
+                    "{0}: {1}",
+                    e.GetType().Name, e.Message);
+                Console.ReadKey();
+                return;
+            }
 
 
             //Пробегаемся по всем хостам и вытягиваем все события с необходимыми тригерами
@@ -133,7 +207,7 @@ namespace zabbixAPIConsole
                 for (int y = 0; y < TResult.result.Count(); y++)
                 {
 
-                    if (TResult.result[y].templateid == "14001")
+                    if (TResult.result[y].templateid == templateid.ToString())
                     {
 
                         //Для найденого тригера вытацим события
@@ -145,7 +219,7 @@ namespace zabbixAPIConsole
                             @params = new Event.RequestParams
                             {
                                 output = "extend",
-                                time_from = unixtime.ConvertToUnixTimestamp(DateTime.Now.AddMonths(-1)),
+                                time_from = unixtime.ConvertToUnixTimestamp(period),
                                 select_acknowledges = "extend",
                                 hostids = HResult.result[x].hostid,
                                 sortfield = new List<string>(new string[] { "clock", "eventid" }),
@@ -179,25 +253,27 @@ namespace zabbixAPIConsole
                             if (EResult.result[z].value == "0")
                             {
                                 if (z == 0) {
+                                    file.Write(period);
                                     file.Write(";");
+                                    file.Write(EResult.result[z].clock - unixtime.ConvertToUnixTimestamp(TimeZoneInfo.ConvertTimeToUtc(period)));
                                     file.Write(";");
-                                    file.Write(TimeZoneInfo.ConvertTimeFromUtc(unixtime.ConvertFromUnixTimestamp(EResult.result[z].clock), TimeZoneInfo.Local).ToString("dd.MM.yyyy hh:mm:ss"));
+                                    file.Write(TimeZoneInfo.ConvertTimeFromUtc(unixtime.ConvertFromUnixTimestamp(EResult.result[z].clock), TimeZoneInfo.Local).ToString());
                                 }
                             } else if (EResult.result[z].value == "1")
                             {
                                 if (z == EResult.result.Count()-1)
                                 {
-                                    file.Write(TimeZoneInfo.ConvertTimeFromUtc(unixtime.ConvertFromUnixTimestamp(EResult.result[z].clock), TimeZoneInfo.Local).ToString("dd.MM.yyyy hh:mm:ss"));
+                                    file.Write(TimeZoneInfo.ConvertTimeFromUtc(unixtime.ConvertFromUnixTimestamp(EResult.result[z].clock), TimeZoneInfo.Local).ToString());
                                     file.Write(";");
+                                    file.Write(unixtime.ConvertToUnixTimestamp(TimeZoneInfo.ConvertTimeToUtc(DateTime.Now)) - EResult.result[z].clock);
                                     file.Write(";");
-                                    file.Write(";");
+                                    file.Write(DateTime.Now);
                                 } else { 
-                                    file.Write(TimeZoneInfo.ConvertTimeFromUtc(unixtime.ConvertFromUnixTimestamp(EResult.result[z].clock), TimeZoneInfo.Local).ToString("dd.MM.yyyy hh:mm:ss"));
+                                    file.Write(TimeZoneInfo.ConvertTimeFromUtc(unixtime.ConvertFromUnixTimestamp(EResult.result[z].clock), TimeZoneInfo.Local).ToString());
                                     file.Write(";");
                                     file.Write(EResult.result[z + 1].clock - EResult.result[z].clock);
                                     file.Write(";");
-                                    file.Write(TimeZoneInfo.ConvertTimeFromUtc(unixtime.ConvertFromUnixTimestamp(EResult.result[z+1].clock), TimeZoneInfo.Local).ToString("dd.MM.yyyy hh:mm:ss"));
-                                    file.Write(";");
+                                    file.Write(TimeZoneInfo.ConvertTimeFromUtc(unixtime.ConvertFromUnixTimestamp(EResult.result[z+1].clock), TimeZoneInfo.Local).ToString());
                                     z = z + 1;
                                 }
                             }
@@ -212,16 +288,11 @@ namespace zabbixAPIConsole
 
                     }
                 }
-
-           
-
-
-
             }
 
             file.Close();
-            Console.WriteLine(HResult.result.Count());
-            Console.ReadKey();
+//            Console.WriteLine(HResult.result.Count());
+//            Console.ReadKey();
         }
     }
 }

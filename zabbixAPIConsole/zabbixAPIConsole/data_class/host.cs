@@ -18,7 +18,7 @@ namespace zabbixAPIConsole.data_class
         }
         public class RequestParams
         {
-            public string groupids { get; set; }
+            public int groupids { get; set; }
         }
 
 
