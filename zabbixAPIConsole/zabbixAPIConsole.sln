@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26403.7
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "zabbixAPIConsole", "zabbixAPIConsole\zabbixAPIConsole.csproj", "{58660EFD-3F96-4999-B370-09BCC2DA8558}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup1", "Setup1\Setup1.vdproj", "{F87B9F29-15AE-411A-97EC-C62FCF8D6CD4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,8 +17,13 @@ Global
 		{58660EFD-3F96-4999-B370-09BCC2DA8558}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{58660EFD-3F96-4999-B370-09BCC2DA8558}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{58660EFD-3F96-4999-B370-09BCC2DA8558}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F87B9F29-15AE-411A-97EC-C62FCF8D6CD4}.Debug|Any CPU.ActiveCfg = Debug
+		{F87B9F29-15AE-411A-97EC-C62FCF8D6CD4}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {06ED70F2-9C9C-4DCF-851D-CA972F8B3507}
 	EndGlobalSection
 EndGlobal
