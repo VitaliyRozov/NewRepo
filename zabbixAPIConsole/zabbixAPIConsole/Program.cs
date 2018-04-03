@@ -11,7 +11,6 @@ namespace zabbixAPIConsole
 {
     class Program
     {
-
         static void Main(string[] args)
         {
 
@@ -19,14 +18,20 @@ namespace zabbixAPIConsole
 
             if (args.Length == 0 || args[0] == "-help") {
                 Console.Write("Не заданы параметры:\n" +
-                    "-perod \"month или week\"\n" +
-                    "-path \"путь до файла\"\n" +
-                    "-groupids \"ID группы хостов скоторых необходимы данные\"\n" +
-                    "-templateid \"ID триггера по которому необходимы данные\"\n");
+                    "-login \t\t логин для досупа к Zabbix API\n" +
+                    "-pass \t\t пароль для досупа к Zabbix API\n" +
+                    "-url \t\t URL адрес Zabbix сервера\n" +
+                    "-period \t month или week\n" +
+                    "-file_path \t путь до файла\n" +
+                    "-group_id \t ID группы хостов скоторых необходимы данные\n" +
+                    "-template_id \t ID триггера по которому необходимы данные\n");
                 Console.ReadKey();
                 return;
             }
 
+            string login = "";
+            string pass = "";
+            string url = "";
             DateTime period = DateTime.Today;
             string path = "";
             int groupids = -1;
@@ -36,7 +41,82 @@ namespace zabbixAPIConsole
             {
                 switch (args[q])
                 {
-                    case "-perod":
+
+                    case "-login":
+                        if (args.Length == (q + 1))
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
+                        try
+                        {
+                            login = args[q + 1];
+                            q += 1;
+                        }
+                        catch
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
+                        break;
+
+                    case "-pass":
+                        if (args.Length == (q + 1))
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
+                        try
+                        {
+                            pass = args[q + 1];
+                            q += 1;
+                        }
+                        catch
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
+                        break;
+
+                    case "-url":
+                        if (args.Length == (q + 1))
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
+                        try
+                            {
+                                url = args[q + 1];
+                                q += 1;
+                            }
+                            catch
+                            {
+                                Console.Write("Неправильное значение параметра {0} \n" +
+                                        "Для получения справки запустите программу с параметром -help", args[q]);
+                                Console.ReadKey();
+                                return;
+                            }
+                        break;
+
+
+                    case "-period":
+                        if (args.Length == (q + 1))
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
                         switch (args[q + 1])
                         {
                             case "month":
@@ -53,8 +133,20 @@ namespace zabbixAPIConsole
                         }
                         q += 1;
                         break;
-                    case "-path":
-                        if ((args[q + 1] == null) || (args[q + 1].IndexOfAny(System.IO.Path.GetInvalidPathChars()) != -1))
+
+
+                    case "-file_path":
+                        if (args.Length == (q + 1))
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
+                        if (
+                            (args[q + 1] == null) ||
+                            (args[q + 1].IndexOfAny(System.IO.Path.GetInvalidPathChars()) != -1)
+                           )
                         {
                             Console.Write("Неправильное значение параметра {0} \n" +
                                     "Для получения справки запустите программу с параметром -help", args[q]);
@@ -78,7 +170,16 @@ namespace zabbixAPIConsole
                         }
                         q += 1;
                         break;
-                    case "-groupids":
+
+
+                    case "-group_id":
+                        if (args.Length == (q + 1))
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
                         try
                         {
                             groupids = Convert.ToInt32(args[q + 1]);
@@ -92,7 +193,16 @@ namespace zabbixAPIConsole
                             return;
                         }
                         break;
-                    case "-templateid":
+
+
+                    case "-template_id":
+                        if (args.Length == (q + 1))
+                        {
+                            Console.Write("Неправильное значение параметра {0} \n" +
+                                    "Для получения справки запустите программу с параметром -help", args[q]);
+                            Console.ReadKey();
+                            return;
+                        }
                         try
                         {
                             templateid = Convert.ToInt32(args[q + 1]);
@@ -106,6 +216,8 @@ namespace zabbixAPIConsole
                             return;
                         }
                         break;
+
+
                     default:
                         Console.Write("Неизвестный параметр: " + args[q]);
                         Console.ReadKey();
@@ -113,7 +225,7 @@ namespace zabbixAPIConsole
                 }
             }
             
-
+            
 
             ///////////////////Аутентификация
 
